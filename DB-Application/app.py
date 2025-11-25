@@ -818,11 +818,31 @@ def create_appointment(conn):
     doctor_id = input("Doctor ID: ").strip()
     dt = input("DateTime (YYYY-MM-DD HH:MM:SS): ").strip()
 
+    # Look up patient name from SSN
+    cur = conn.execute(
+        "SELECT name FROM Patient WHERE ssn = ?;",
+        (ssn,)
+    )
+    row = cur.fetchone()
+    if row is None:
+        print("Error: No patient found with that SSN.\n")
+        return
+
+    patient_name = row[0]
+
     try:
-        conn.execute("""
-            INSERT INTO Appointment (patient_ssn, doctor_id, scheduled_datetime)
-            VALUES (?, ?, ?);
-        """, (ssn, doctor_id, dt))
+        conn.execute(
+            """
+            INSERT INTO Appointment (
+                patient_ssn,
+                patient_name,
+                doctor_id,
+                scheduled_datetime
+            )
+            VALUES (?, ?, ?, ?);
+            """,
+            (ssn, patient_name, doctor_id, dt),
+        )
         conn.commit()
         print("Appointment created successfully.\n")
     except sqlite3.IntegrityError as e:
@@ -1388,3 +1408,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
